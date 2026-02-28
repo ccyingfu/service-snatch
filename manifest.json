@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "ServiceSnatch",
+  "version": "1.0.0",
+  "description": "监控浏览器网络请求，自动识别服务并生成 Mock 测试数据",
+  "permissions": [
+    "debugger",
+    "storage",
+    "activeTab"
+  ],
+  "background": {
+    "service_worker": "background/service-worker.js"
+  },
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "assets/icons/icon-16.png",
+      "48": "assets/icons/icon-48.png",
+      "128": "assets/icons/icon-128.png"
+    }
+  },
+  "icons": {
+    "16": "assets/icons/icon-16.png",
+    "48": "assets/icons/icon-48.png",
+    "128": "assets/icons/icon-128.png"
+  }
+}

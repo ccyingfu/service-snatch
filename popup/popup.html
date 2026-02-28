@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ServiceSnatch</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <!-- 头部 -->
+    <header class="header">
+      <div class="title">
+        <span class="icon">🔴</span>
+        <h1>ServiceSnatch</h1>
+      </div>
+      <button class="settings-btn" id="settingsBtn" title="设置">⚙️</button>
+    </header>
+
+    <!-- 控制面板 -->
+    <section class="control-panel">
+      <button class="btn btn-primary" id="recordBtn">
+        <span class="btn-icon">▶️</span>
+        <span class="btn-text">开始录制</span>
+      </button>
+      <button class="btn btn-secondary" id="clearBtn">
+        <span class="btn-icon">🗑️</span>
+        <span class="btn-text">清空</span>
+      </button>
+    </section>
+
+    <!-- 状态栏 -->
+    <section class="status-bar">
+      <span class="status-label">📊 已捕获:</span>
+      <span class="status-count" id="requestCount">0</span>
+      <span class="status-label">个请求</span>
+      <span class="recording-methods" id="recordingMethods"></span>
+      <span class="recording-indicator" id="recordingIndicator"></span>
+    </section>
+
+    <!-- 方法筛选器 -->
+    <section class="filter-panel">
+      <span class="filter-label" title="选择要录制的请求类型">📝 录制类型:</span>
+      <div class="method-filters" id="methodFilters">
+        <label class="method-filter">
+          <input type="checkbox" value="GET" checked>
+          <span class="method-tag GET">GET</span>
+        </label>
+        <label class="method-filter">
+          <input type="checkbox" value="POST" checked>
+          <span class="method-tag POST">POST</span>
+        </label>
+        <label class="method-filter">
+          <input type="checkbox" value="PUT" checked>
+          <span class="method-tag PUT">PUT</span>
+        </label>
+        <label class="method-filter">
+          <input type="checkbox" value="DELETE" checked>
+          <span class="method-tag DELETE">DELETE</span>
+        </label>
+        <label class="method-filter">
+          <input type="checkbox" value="PATCH" checked>
+          <span class="method-tag PATCH">PATCH</span>
+        </label>
+      </div>
+    </section>
+
+    <!-- 服务名称筛选器 -->
+    <section class="filter-panel">
+      <span class="filter-label">🏷️ 服务名称:</span>
+      <input type="text" class="search-input" id="serviceFilter" placeholder="输入服务名称筛选...">
+    </section>
+
+    <!-- 请求列表 -->
+    <section class="request-list" id="requestList">
+      <div class="empty-state">
+        <p>点击"开始录制"捕获网络请求</p>
+      </div>
+    </section>
+
+    <!-- 导出按钮 -->
+    <footer class="footer">
+      <button class="btn btn-export" id="exportBtn">
+        <span class="btn-icon">📥</span>
+        <span class="btn-text">导出 JSON</span>
+      </button>
+    </footer>
+  </div>
+
+  <!-- 请求详情弹窗 -->
+  <div class="modal" id="requestModal">
+    <div class="modal-overlay" id="modalOverlay"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modalTitle">请求详情</h3>
+        <button class="modal-close" id="modalClose">✕</button>
+      </div>
+      <div class="modal-body" id="modalBody">
+        <!-- 动态内容 -->
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="copyRequestBtn">
+          <span class="btn-icon">📋</span>
+          <span class="btn-text">复制请求</span>
+        </button>
+        <button class="btn btn-secondary" id="copyResponseBtn">
+          <span class="btn-icon">📋</span>
+          <span class="btn-text">复制响应</span>
+        </button>
+        <button class="btn btn-primary" id="copyAllBtn">
+          <span class="btn-icon">📋</span>
+          <span class="btn-text">复制全部</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 设置弹窗 -->
+  <div class="modal" id="settingsModal">
+    <div class="modal-overlay" id="settingsOverlay"></div>
+    <div class="modal-content settings-content">
+      <div class="modal-header">
+        <h3 class="modal-title">设置</h3>
+        <button class="modal-close" id="settingsClose">✕</button>
+      </div>
+      <div class="modal-body">
+        <!-- 导出设置 -->
+        <div class="setting-section">
+          <div class="setting-label">导出文件名</div>
+          <div class="setting-description">
+            自定义导出文件的名称，可使用变量：
+            <br><code>{date}</code> - 日期 (YYYY-MM-DD), <code>{time}</code> - 时间 (HH-mm-ss)
+            <br><code>{timestamp}</code> - Unix 时间戳 (毫秒), <code>{service}</code> - 服务名
+            <br><code>{request_type}</code> - 请求类型 (GET/POST/PUT/DELETE/PATCH/MIXED)
+          </div>
+          <input type="text" class="setting-input" id="filenameTemplate"
+                 placeholder="例如: {request_type}_{timestamp}.json">
+        </div>
+
+        <!-- 过滤设置 -->
+        <div class="setting-section">
+          <div class="setting-label">静态资源过滤</div>
+          <div class="setting-description">
+            自动过滤以下静态资源请求：
+            <br>图片、CSS、JS、字体、媒体文件等
+          </div>
+          <label class="setting-checkbox">
+            <input type="checkbox" id="filterStaticResources" checked>
+            <span>启用静态资源过滤</span>
+          </label>
+        </div>
+
+        <!-- 导出格式设置 -->
+        <div class="setting-section">
+          <div class="setting-label">导出格式</div>
+          <div class="setting-description">
+            选择导出的数据格式
+          </div>
+          <select class="setting-select" id="exportFormat">
+            <option value="standard">标准格式（包含完整信息）</option>
+            <option value="simple">简化格式（仅包含必要信息）</option>
+            <option value="mock">Mock 格式（适用于 Mock 服务器）</option>
+          </select>
+        </div>
+
+        <!-- 存储目录设置 -->
+        <div class="setting-section">
+          <div class="setting-label">存储目录</div>
+          <div class="setting-description">
+            选择导出文件的默认保存目录。如未选择，将保存到浏览器默认下载位置。
+          </div>
+          <div class="directory-selector">
+            <button class="btn btn-secondary btn-small" id="selectDirectoryBtn" type="button">
+              <span class="btn-icon">📁</span>
+              <span class="btn-text">选择目录</span>
+            </button>
+            <span class="directory-status" id="directoryStatus">未选择目录</span>
+            <button class="btn-icon-btn" id="clearDirectoryBtn" title="清除目录" style="display: none;">✕</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="resetSettingsBtn">重置默认</button>
+        <button class="btn btn-primary" id="saveSettingsBtn">保存设置</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../utils/directory-storage.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
